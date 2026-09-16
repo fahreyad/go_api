@@ -4,22 +4,27 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/fahreyad/go_api/internal/config"
 )
 
 func main() {
+	cnf := config.MustLoad()
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"status":"ok"}`))
 	})
-	serv := http.Server{
-		Addr:         ":8999",
+	serv := &http.Server{
+		Addr:         ":" + cnf.Port,
 		Handler:      mux,
 		ReadTimeout:  time.Second * 10,
 		WriteTimeout: time.Second * 30,
 		IdleTimeout:  time.Second * 60,
 	}
+
+	log.Printf("Starting server on %s", serv.Addr)
 
 	if err := serv.ListenAndServe(); err != nil {
 		log.Fatalf("Error starting server: %v", err)
