@@ -6,16 +6,13 @@ import (
 	"time"
 
 	"github.com/fahreyad/go_api/internal/config"
+	"github.com/fahreyad/go_api/internal/handlers"
 )
 
 func main() {
 	cnf := config.MustLoad()
 	mux := http.NewServeMux()
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"ok"}`))
-	})
+	mux.HandleFunc("/health", handlers.Health)
 	serv := &http.Server{
 		Addr:         ":" + cnf.Port,
 		Handler:      mux,
