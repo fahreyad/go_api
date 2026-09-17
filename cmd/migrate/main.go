@@ -33,12 +33,11 @@ func main() {
 		}
 		fmt.Println("Running migrations up...")
 	case "down":
-		err = m.Down()
+		err = m.Steps(-1)
 		if err != nil {
 			log.Fatalf("migrate_down: Failed to run migrations down: %v", err)
 		}
 		fmt.Println("Running migrations down...")
-		// Add your migration logic here for "down"
 	default:
 		fmt.Println("Invalid argument. Use 'up' or 'down'.")
 	}

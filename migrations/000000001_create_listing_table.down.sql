@@ -1,1 +1,1 @@
-Drop Table listings;
+Drop Table listings if it exists;
