@@ -21,8 +21,10 @@ func main() {
 	log.Println("Successfully connected to database")
 
 	mux := http.NewServeMux()
+	handler := handlers.NewHandler(db)
 	mux.HandleFunc("GET /health", handlers.Health)
-	mux.HandleFunc("GET /listings", handlers.List(db))
+	mux.HandleFunc("GET /listings", handler.List)
+	mux.HandleFunc("DELETE /listings/{id}", handler.Delete)
 
 	serv := &http.Server{
 		Addr:         ":" + cnf.Port,
