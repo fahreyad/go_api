@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -25,7 +26,7 @@ type listing struct {
 
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 
-	rows, err := h.DB.Query("SELECT * FROM listings order by created_at desc limit 10")
+	rows, err := h.DB.QueryContext(r.Context(), "SELECT * FROM listings order by created_at desc limit 10")
 	if err != nil {
 		http.Error(w, "Error fetching listings", http.StatusInternalServerError)
 		return
@@ -59,8 +60,9 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
-	_, err := h.DB.Exec("DELETE FROM listings WHERE id = $1", id)
+	_, err := h.DB.ExecContext(r.Context(), "DELETE FROM listing WHERE id = $1", id)
 	if err != nil {
+		slog.Error("Error deleting listing with id", "id", id, "error", err)
 		http.Error(w, "Error deleting listing", http.StatusInternalServerError)
 		return
 	}

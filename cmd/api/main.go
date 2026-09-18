@@ -2,7 +2,9 @@ package main
 
 import (
 	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/fahreyad/go_api/internal/config"
@@ -18,14 +20,19 @@ func main() {
 		log.Fatalf("Error connecting to database: %v", err)
 	}
 
-	log.Println("Successfully connected to database")
+	// logger setup
+	loghandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo, AddSource: true})
+	logger := slog.New(loghandler)
+	slog.SetDefault(logger)
 
+	//router set up
 	mux := http.NewServeMux()
 	handler := handlers.NewHandler(db)
 	mux.HandleFunc("GET /health", handlers.Health)
 	mux.HandleFunc("GET /listings", handler.List)
 	mux.HandleFunc("DELETE /listings/{id}", handler.Delete)
-
+	
+	// server set up
 	serv := &http.Server{
 		Addr:         ":" + cnf.Port,
 		Handler:      mux,
