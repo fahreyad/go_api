@@ -6,14 +6,13 @@ import (
 	"log/slog"
 	"net/http"
 	"time"
+
+	"github.com/fahreyad/go_api/internal/middleware"
 )
 
 type Handler struct {
-	DB *sql.DB
-}
-
-func NewHandler(db *sql.DB) *Handler {
-	return &Handler{DB: db}
+	DB     *sql.DB
+	Logger *slog.Logger
 }
 
 type listing struct {
@@ -24,8 +23,13 @@ type listing struct {
 	CreatedAt   time.Time `json:"created_at"`
 }
 
-func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
+func NewHandler(db *sql.DB, logger *slog.Logger) *Handler {
+	return &Handler{DB: db, Logger: logger}
 
+}
+
+func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
+	requestID := middleware.GetRequestID(r.Context())
 	rows, err := h.DB.QueryContext(r.Context(), "SELECT * FROM listings order by created_at desc limit 10")
 	if err != nil {
 		http.Error(w, "Error fetching listings", http.StatusInternalServerError)
@@ -37,12 +41,13 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		var l listing
 		err := rows.Scan(&l.ID, &l.Title, &l.Description, &l.Price, &l.CreatedAt)
 		if err != nil {
+			h.Logger.Error("Error scanning listing", "error", err)
 			http.Error(w, "Error scanning listing", http.StatusInternalServerError)
 			return
 		}
 		listings = append(listings, l)
 	}
-
+	h.Logger.Info("Fetched listings", "count", len(listings), "request_id", requestID)
 	if err := rows.Err(); err != nil {
 		http.Error(w, "Error occurred while iterating rows", http.StatusInternalServerError)
 		return
@@ -59,10 +64,11 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-
-	_, err := h.DB.ExecContext(r.Context(), "DELETE FROM listing WHERE id = $1", id)
+	ctx := r.Context()
+	requestID := middleware.GetRequestID(ctx)
+	_, err := h.DB.ExecContext(ctx, "DELETE FROM listing WHERE id = $1", id)
 	if err != nil {
-		slog.Error("Error deleting listing with id", "id", id, "error", err)
+		h.Logger.Error("Error deleting listing with id", "id", id, "request_id", requestID, "error", err)
 		http.Error(w, "Error deleting listing", http.StatusInternalServerError)
 		return
 	}
