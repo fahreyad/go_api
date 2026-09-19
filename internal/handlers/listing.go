@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/fahreyad/go_api/internal/httpx"
 	"github.com/fahreyad/go_api/internal/middleware"
 )
 
@@ -32,7 +33,7 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	requestID := middleware.GetRequestID(r.Context())
 	rows, err := h.DB.QueryContext(r.Context(), "SELECT * FROM listings order by created_at desc limit 10")
 	if err != nil {
-		http.Error(w, "Error fetching listings", http.StatusInternalServerError)
+		httpx.Error(w, http.StatusInternalServerError, "Error fetching listings", httpx.INTERNAL_ERROR)
 		return
 	}
 	defer rows.Close()
@@ -49,7 +50,7 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	}
 	h.Logger.Info("Fetched listings", "count", len(listings), "request_id", requestID)
 	if err := rows.Err(); err != nil {
-		http.Error(w, "Error occurred while iterating rows", http.StatusInternalServerError)
+		httpx.Error(w, http.StatusInternalServerError, "Error occurred while iterating rows", httpx.INTERNAL_ERROR)
 		return
 	}
 
@@ -57,7 +58,7 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(listings)
 	if err != nil {
-		http.Error(w, "Error encoding JSON", http.StatusInternalServerError)
+		httpx.Error(w, http.StatusInternalServerError, "Error encoding JSON", httpx.INTERNAL_ERROR)
 		return
 	}
 }
@@ -69,7 +70,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	_, err := h.DB.ExecContext(ctx, "DELETE FROM listing WHERE id = $1", id)
 	if err != nil {
 		h.Logger.Error("Error deleting listing with id", "id", id, "request_id", requestID, "error", err)
-		http.Error(w, "Error deleting listing", http.StatusInternalServerError)
+		httpx.Error(w, http.StatusInternalServerError, "Error deleting listing", httpx.INTERNAL_ERROR)
 		return
 	}
 
